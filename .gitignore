@@ -31,3 +31,5 @@ lib/
 data/
 
 .DS_Store
+
+.env
