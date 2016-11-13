@@ -1,6 +1,10 @@
 # demo-feathers-auth0-api
 
-API with authentication provided by Auth0, to be used by a single-page application.
+A basic example of API with authentication provided by Auth0, to be used by a single-page application.
+
+This is my attemps to solve [this question](http://stackoverflow.com/questions/40497554/auth0-authentication-of-single-page-app-on-a-different-domain-than-the-api):
+
+How to use an API with authentication, using 2 different domains, one for the API, one for the web client (Single-Page application) ?
 
 ## Step 0: creating an application with FeathersJS
 
