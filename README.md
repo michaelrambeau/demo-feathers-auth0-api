@@ -2,7 +2,7 @@
 
 API with authentication provided by Auth0, to be used by a single-page application.
 
-## Step 0
+## Step 0: creating an application with FeathersJS
 
 Use `feathers-cli` to generate a REST API server skeleton
 
@@ -18,16 +18,19 @@ Linting
 
 Launch the application: `npm start`
 
+The following message should be displayed:
+
 ```
 Feathers application started on localhost:3030
 ```
 
-Check the routes:
+Check the routes from the browser:
 
 * `http://localhost:3030/` will display the static page from the `public` folder
 * `http://localhost:3030/user` will display a '401 Not Authorized' page.
 
-## Step 1
+
+## Step 1: adding Auth0
 
 ### Setup
 
@@ -112,3 +115,57 @@ It will return the user list:
 ```
 
 You can also query the `users` service using an HTTP request, passing the user's token in the `authorization` header.
+
+## Step 2: authentication from an other domain
+
+Now we want to be able to login from a single-page hosted on an other domain.
+
+So we are going to create a html page hosted on `http://localhost:3000` for example.
+
+In the previous step, after a successful authentication happens, the `/auth/success` route route was called, and the server redirected to a static html page, sending a `feathers-jwt` cookie that contains the user's token.
+Then, on the client side, the Feathers client reads the token stored in the cookie and stores it in the browser local storage.
+
+In the single-page app scenario, after a successful authentication, instead of redirecting the user to the static page, we have to redirect the user back to the single-page application.
+
+We can do that by adding adding a `source` parameter to the authentication URL, in the SPA "LOGIN" button.
+
+```html
+<a href="http://localhost:3030/auth/auth0?source=http://localhost:3000" class="button">LOGIN</a>
+```
+
+Then, server-side, we create a middleware that reads this parameters and stores it inside a cookie.
+
+```js
+// Middleware that adds a cookie with the URL where the request comes from,
+// reading the `source` querystring parameter.
+// Later, after a successful login, we will redirect the user to this URL.
+app.get('/auth/auth0', (req, res, next) => {
+  const { source } = req.query
+  if (source) {
+    res.cookie(WEB_CLIENT_COOKIE, source)
+  } else {
+    res.clearCookie(WEB_CLIENT_COOKIE)
+  }
+  next()
+})
+```
+
+Finally, after a successful login, we read the cookie that contains the source URL and we also have to send the `feathers-jwt` cookie to the single-page application.
+
+```js
+app.get('/auth/success', function (req, res) {
+  const url = req.cookies[WEB_CLIENT_COOKIE]
+  if (url) {
+    //  if there is a cookie that contains the URL source, redirect the user to this URL,
+    // "forwarding" the short-term cookie that contains the user's token.
+    const token = req.cookies['feathers-jwt']
+    res.cookie('feathers-jwt', token, {
+      maxAge: 1000 * 10 // will expire in 10 seconds
+    })
+    res.redirect(url)
+  } else {
+    // otherwise send the static page on the same domain.
+    res.sendFile(path.resolve(process.cwd(), 'public', 'success.html'))
+  }
+})
+```
