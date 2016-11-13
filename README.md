@@ -111,4 +111,4 @@ It will return the user list:
 }
 ```
 
-You can also query the `users` service an HTTP request, passing the user's token in the `authorization`.
+You can also query the `users` service using an HTTP request, passing the user's token in the `authorization` header.
